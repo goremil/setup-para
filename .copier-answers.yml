@@ -1,9 +1,9 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: v0.9.0
+_commit: v0.10.0
 _src_path: https://github.com/goremil/setup-base.git
 description: The PARA skeleton of the knowledge vault and the taxonomy of kinds shared
     with the home directory, with the home-manager module that seeds it.
-forge: codeberg
+forge: github
 forge_owner: goremil
 network_service: false
 project_name: setup-para

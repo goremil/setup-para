@@ -2,7 +2,7 @@
 
 The PARA skeleton of the knowledge vault and the taxonomy of kinds shared with the home directory, with the home-manager module that seeds it.
 
-Status: v0.1 in progress: the spec, its checks and the home-manager module.
+Status: v0.1 in progress: the spec, its checks and the home-manager module. Private while it matures; the target is public.
 
 ## The spec
 
