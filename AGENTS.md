@@ -20,7 +20,7 @@ The PARA skeleton of the knowledge vault and the taxonomy of kinds shared with t
 | `para.nix` | The spec: roles, folders, kinds, idea statuses |
 | `lib/para.nix` | Checks the spec at evaluation |
 | `module/` | `homeModules.default`: seeds the folders and the vault's `AGENTS.md` (prose in `agents-vault.md`), links each folder's lint config |
-| `.githooks/` | pre-commit (`repo-check`) and commit-msg, in the dev shell |
+| `.githooks/` | pre-commit (`repo-check`), commit-msg and pre-push (signed and squashed commits, R-git-07), in the dev shell |
 | `.markdownlint-cli2.jsonc` | Lint profile, linked by the dev shell; untracked |
 | `cspell.config.yaml`, `.cspell/` | Spell-check settings and word lists of this repository; `oxford.yaml`, `oxford-ize.txt` and `nix-words.txt` are the managed profile, replaced by `copier update` |
 | `REUSE.toml`, `LICENSES/` | Licence of each path |
