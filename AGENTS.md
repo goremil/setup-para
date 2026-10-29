@@ -9,7 +9,7 @@ The PARA skeleton of the knowledge vault and the taxonomy of kinds shared with t
 ## Rules
 
 - The rule core of `setup-base` applies; a departure from it is recorded under "Deviations" below.
-- This repository is private on GitHub while it matures, and its target is public (it goes public once its README has instructions and an example). It is built as public from the first commit: nothing personal goes in, no names of hosts, people or private repositories, no paths into a user's home directory.
+- This repository is public. Nothing personal goes in: no names of hosts, people or private repositories, no paths into a user's home directory.
 - `repo-check` passes before a commit; the pre-commit hook runs it.
 
 ## Layout
