@@ -2,7 +2,7 @@
 
 The PARA skeleton of the knowledge vault and the taxonomy of kinds shared with the home directory, with the home-manager module that seeds it.
 
-Status: v0.1 in progress: the spec, its checks and the home-manager module.
+Status: v0.1: the spec, its checks and the home-manager module. Next, v0.2: `para-check`, a report of what the vault holds against the spec.
 
 ## The spec
 
@@ -19,7 +19,19 @@ Folders are numbered in tens by the flow (inbox, ideas, projects, areas, resourc
 
 ## The module
 
-`homeModules.default` applies the spec to a vault in home-manager:
+`homeModules.default` applies the spec to a vault in home-manager. A flake that builds a home-manager configuration takes the repository as an input and imports the module:
+
+```nix
+inputs.setup-para = {
+  url = "git+https://github.com/goremil/setup-para";
+  inputs.home-manager.follows = "home-manager";
+};
+
+# in the home-manager modules
+imports = [ inputs.setup-para.homeModules.default ];
+```
+
+Then the vault is described in the home configuration:
 
 ```nix
 setup.para = {
