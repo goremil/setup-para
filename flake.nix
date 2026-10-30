@@ -19,7 +19,10 @@
       home-manager,
     }:
     let
-      repo = base.lib.mkRepo { inherit self; };
+      repo = base.lib.mkRepo {
+        inherit self;
+        features = [ "python" ];
+      };
       para = import ./lib/para.nix (import ./para.nix);
       inherit (base.inputs.nixpkgs) lib;
     in
@@ -29,6 +32,21 @@
       lib = { inherit para; };
 
       homeModules.default = import ./module { inherit para base; };
+
+      # para-check with this spec, for the vault's repo-check (T6-m).
+      packages = lib.mapAttrs (
+        system: _:
+        let
+          pc = import ./tools/package.nix {
+            pkgs = base.inputs.nixpkgs.legacyPackages.${system};
+            inherit para;
+          };
+        in
+        {
+          inherit (pc) para-check;
+          default = pc.para-check;
+        }
+      ) repo.checks;
 
       # para: building the JSON evaluates every value, so a wrong value fails
       # `nix flake check`. para-rejects: specs that must not evaluate. module:
@@ -115,6 +133,28 @@
                 }
               ];
             };
+            "content with another field" = good // {
+              content = good.content // {
+                images = [ ];
+              };
+            };
+            "extension with a dot" = good // {
+              content = good.content // {
+                formats.".pdf" = "note";
+              };
+            };
+            "unknown content class" = good // {
+              content = good.content // {
+                formats = good.content.formats // {
+                  pdf = "document";
+                };
+              };
+            };
+            "raster limit not positive" = good // {
+              content = good.content // {
+                rasterKiB = 0;
+              };
+            };
           };
           accepted = lib.filter (name: !rejects bad.${name}) (lib.attrNames bad);
           home =
@@ -129,7 +169,13 @@
                     stateVersion = "26.05";
                     enableNixpkgsReleaseCheck = false; # master on nixpkgs 26.05
                   };
-                  setup.para.enable = true;
+                  setup.para = {
+                    enable = true;
+                    check = {
+                      enable = true;
+                      vendored = [ "20_Projects/vend/" ];
+                    };
+                  };
                 }
               ];
             }).activationPackage;
@@ -142,6 +188,72 @@
               accepted == [ ]
             ) "lib/para.nix accepts: ${lib.concatStringsSep "; " accepted}";
             pkgs.runCommand "para-rejects" { } "touch $out";
+          # para-check on a test vault: a clean one passes in both modes, then
+          # each finding is planted once and reported.
+          para-check =
+            let
+              pc = import ./tools/package.nix { inherit pkgs para; };
+              lintMap = pkgs.writeText "lint.json" (
+                builtins.toJSON {
+                  "10_Ideas" = "${pkgs.writeText "profile" "{}"}";
+                  "20_Projects" = "${pkgs.writeText "profile" "{}"}";
+                }
+              );
+            in
+            pkgs.runCommand "para-check"
+              {
+                nativeBuildInputs = [
+                  pc.unwrapped
+                  pkgs.git
+                ];
+              }
+              ''
+                export PARA_CHECK_SPEC=${pc.json} HOME="$TMPDIR"
+                mkdir v && cd v
+                mkdir ${lib.concatStringsSep " " (lib.attrNames para.folders)}
+                csp='<meta http-equiv="Content-Security-Policy" content="default-src '"'"'none'"'"'">'
+                printf '# A\n\n**Captured:** 2026-10-30 · **Status:** seed\n' > 10_Ideas/a.md
+                echo '# Ideas' > 10_Ideas/INDEX.md
+                echo '<svg/>' > 20_Projects/p.svg
+                echo "$csp" > 40_Resources/page.html
+                mkdir 20_Projects/vend && echo 'print(1)' > 20_Projects/vend/tool.py
+                printf 'x\0y' > .hidden-binary-in-tree
+                git init -q && git add -A
+                ! para-check --repo --vendored 20_Projects/vend/ > out
+                grep -q 'binary: .hidden-binary-in-tree' out
+                git rm -q --cached .hidden-binary-in-tree && rm .hidden-binary-in-tree
+                para-check --repo --vendored 20_Projects/vend/
+                para-check --vault . --vendored 20_Projects/vend/
+
+                printf '# B\n\n**Status:** maybe\n' > 10_Ideas/b.md
+                echo '# C' > 10_Ideas/c.md
+                echo x > 20_Projects/x.pdf
+                mkdir Stuff && echo x > Stuff/n.md
+                head -c 600000 /dev/zero | tr '\0' x > 30_Areas/big.png
+                echo '<p>no policy</p>' > 40_Resources/bare.html
+                printf 'a\0b' > 40_Resources/bin.md
+                rmdir 99_Scratchpad
+                ln -s ${pkgs.writeText "profile" "{}"} 10_Ideas/.markdownlint-cli2.jsonc
+                echo '{}' > 20_Projects/.markdownlint-cli2.jsonc
+                ! para-check --vault . --vendored 20_Projects/vend/ --lint ${lintMap} --report "$TMPDIR/r.md" > out
+                cat out
+                for want in \
+                  'status: 10_Ideas/b.md: status `maybe`' \
+                  'status: 10_Ideas/c.md: no' \
+                  'format: 20_Projects/x.pdf' \
+                  'unknown: Stuff/n.md' \
+                  'unknown: Stuff: a visible folder' \
+                  'size: 30_Areas/big.png' \
+                  'csp: 40_Resources/bare.html: no Content-Security-Policy' \
+                  'binary: 40_Resources/bin.md' \
+                  'missing: 99_Scratchpad' \
+                  'lint: 20_Projects/.markdownlint-cli2.jsonc: not the link'; do
+                  grep -qF "$want" out || { echo "missing finding: $want"; exit 1; }
+                done
+                test "$(wc -l < out)" -eq 10
+                grep -qF '| missing | `99_Scratchpad` |' "$TMPDIR/r.md"
+                touch $out
+              '';
           # module: the folders are seeded in flow order, AGENTS.md once, and
           # each folder links the profile its spec names.
           module = pkgs.runCommand "module" { nativeBuildInputs = [ pkgs.jq ]; } ''
@@ -156,6 +268,11 @@
             jq -e '.config.default == false' $cfg/90_Archive/.markdownlint-cli2.jsonc
             jq -e '.config["no-alerts"] == false and .config.MD033 != false' $cfg/20_Projects/.markdownlint-cli2.jsonc
             test $(ls -A $cfg | wc -l) -eq 7
+            units=${home}/home-files/.config/systemd/user
+            grep -qF "OnCalendar=Mon 10:30" $units/para-check-report.timer
+            report=$(grep -o "/nix/store/[^ ]*/bin/para-check-report" $units/para-check-report.service)
+            grep -qF -- "--vendored=20_Projects/vend/" "$report"
+            test -x ${home}/home-path/bin/para-check
             touch $out
           '';
         }

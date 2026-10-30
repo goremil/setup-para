@@ -9,6 +9,12 @@
 #   kinds       kinds of content a folder of the home directory can hold
 #   ideaStatus  the maturity of an idea in order, each { name; meaning; }
 #               with its exit criterion
+#   content     what a visible file in a PARA folder may be (T6-m)
+#     formats   extension (lowercase, no dot) -> class: note | illustration |
+#               raster (an illustration with a size limit) | page (an
+#               artefact with a Content-Security-Policy) | asset (a page's
+#               .css or .js); anything else is not content
+#     rasterKiB the size limit of a raster illustration
 {
   roles = {
     inbox = "Capture: unsorted items awaiting triage, emptied quickly.";
@@ -83,4 +89,17 @@
       meaning = "Not worth pursuing; the note moves to the archive with the reason.";
     }
   ];
+
+  content = {
+    formats = {
+      md = "note";
+      txt = "note";
+      svg = "illustration";
+      png = "raster";
+      html = "page";
+      css = "asset";
+      js = "asset";
+    };
+    rasterKiB = 512;
+  };
 }

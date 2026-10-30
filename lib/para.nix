@@ -11,6 +11,7 @@ let
     filter
     hasAttr
     isAttrs
+    isInt
     isList
     isString
     length
@@ -31,6 +32,14 @@ let
     "folders"
     "kinds"
     "ideaStatus"
+    "content"
+  ];
+  classes = [
+    "note"
+    "illustration"
+    "raster"
+    "page"
+    "asset"
   ];
   fields = [
     "role"
@@ -81,6 +90,33 @@ let
     s: !(spec ? ${s}) || !(if s == "ideaStatus" then isList spec.${s} else isAttrs spec.${s})
   ) sections;
 
+  # content: { formats = { EXT = CLASS; }; rasterKiB = N; }, nothing else.
+  content =
+    let
+      c = spec.content;
+      format =
+        ext: class:
+        if match "[a-z0-9]+" ext == null then
+          fail "content.formats.${ext}" "an extension is lowercase, without the dot"
+        else if !elem class classes then
+          fail "content.formats.${ext}" "the class is one of ${concatStringsSep ", " classes}"
+        else
+          class;
+    in
+    if
+      attrNames c != [
+        "formats"
+        "rasterKiB"
+      ]
+    then
+      fail "content" "content is { formats; rasterKiB; }"
+    else if !(isAttrs c.formats) || c.formats == { } then
+      fail "content.formats" "a non-empty attribute set"
+    else if !(isInt c.rasterKiB) || c.rasterKiB < 1 then
+      fail "content.rasterKiB" "a positive integer"
+    else
+      c // { formats = mapAttrs format c.formats; };
+
   # ideaStatus: an ordered list of { name; meaning; }, names unique.
   statuses = map (
     st:
@@ -110,4 +146,5 @@ else
     inherit roles folders;
     kinds = definitions "kinds";
     ideaStatus = statuses;
+    inherit content;
   }

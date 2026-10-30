@@ -7,6 +7,7 @@
 # - setup.para.lint: each folder's .markdownlint-cli2.jsonc, linked from the
 #   store to the profile its spec names (T6-c), so a new profile arrives with
 #   a switch.
+# - setup.para.check: para-check and its weekly report (T6-m).
 { para, base }:
 {
   config,
@@ -39,6 +40,33 @@ let
   );
 
   vault = "${config.home.homeDirectory}/${cfg.vault}";
+  lintFile =
+    name:
+    "${base.lib.markdownlint.config pkgs { profile = folders.${name}.lint; }}/.markdownlint-cli2.jsonc";
+
+  paraCheck =
+    (import ../tools/package.nix {
+      inherit pkgs para;
+      lint = if cfg.lint.enable then lib.genAttrs names lintFile else { };
+    }).para-check;
+  report = pkgs.writeShellApplication {
+    name = "para-check-report";
+    runtimeInputs = [
+      paraCheck
+      pkgs.gnugrep
+      pkgs.libnotify
+    ];
+    text = ''
+      file="''${XDG_STATE_HOME:-$HOME/.local/state}/para-check/report.md"
+      if ! found=$(para-check --vault "${vault}" --report "$file" ${
+        lib.escapeShellArgs (map (v: "--vendored=${v}") cfg.check.vendored)
+      }); then
+        notify-send --urgency=normal --app-name="para-check" \
+          "$(grep -c . <<<"$found") findings in the vault against the PARA spec" \
+          "Report: $file"
+      fi
+    '';
+  };
 in
 {
   options.setup.para = {
@@ -52,6 +80,15 @@ in
       type = lib.types.bool;
       default = true;
       description = "Whether each folder gets its managed markdownlint config.";
+    };
+    check = {
+      enable = lib.mkEnableOption "para-check and its weekly report";
+      vendored = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        example = [ "20_Projects/global-setup/resources/prior-art/" ];
+        description = "Path prefixes in the vault of vendored copies, text of any kind.";
+      };
     };
   };
 
@@ -76,12 +113,30 @@ in
           map (
             name:
             lib.nameValuePair "${cfg.vault}/${name}/.markdownlint-cli2.jsonc" {
-              source = "${
-                base.lib.markdownlint.config pkgs { profile = folders.${name}.lint; }
-              }/.markdownlint-cli2.jsonc";
+              source = lintFile name;
             }
           ) names
         );
+      })
+      (lib.mkIf cfg.check.enable {
+        home.packages = [ paraCheck ];
+
+        systemd.user.services.para-check-report = {
+          Unit.Description = "Report what in the vault differs from the PARA spec";
+          Service = {
+            Type = "oneshot";
+            ExecStart = "${report}/bin/para-check-report";
+          };
+        };
+
+        systemd.user.timers.para-check-report = {
+          Unit.Description = "Weekly check of the vault against the PARA spec";
+          Timer = {
+            OnCalendar = "Mon 10:30";
+            Persistent = true; # catch up on next login if the machine was off
+          };
+          Install.WantedBy = [ "timers.target" ];
+        };
       })
     ]
   );

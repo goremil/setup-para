@@ -2,7 +2,7 @@
 
 The PARA skeleton of the knowledge vault and the taxonomy of kinds shared with the home directory, with the home-manager module that seeds it.
 
-Status: v0.1: the spec, its checks and the home-manager module. Next, v0.2: `para-check`, a report of what the vault holds against the spec.
+Status: v0.2: the spec, its checks, the home-manager module and `para-check`.
 
 ## The spec
 
@@ -14,6 +14,7 @@ Status: v0.1: the spec, its checks and the home-manager module. Next, v0.2: `par
 | `folders` | The vault's top-level folders, with `role` and `lint` (the markdownlint profile: `agent`, `forge`, `hybrid` or `off`) | the name is `NN_Name`, numbers are unique, the role and the profile are known, no other fields |
 | `kinds` | The kinds of content a folder of the home directory can hold | a lowercase camelCase name, a non-empty definition |
 | `ideaStatus` | The maturity of an idea, in order: a list of `{ name; meaning; }`, each meaning with its exit criterion | a lowercase camelCase name used once, a non-empty meaning, no other fields |
+| `content` | What a visible file in a PARA folder may be: `formats` maps an extension to its class (`note`, `illustration`, `raster`, `page` or `asset`), `rasterKiB` limits a raster illustration | an extension is lowercase without the dot, the class is known, the limit a positive integer, no other fields |
 
 Folders are numbered in tens by the flow (inbox, ideas, projects, areas, resources, archive), so a new folder fits in without renumbering; `99_Scratchpad` sits outside the flow. A folder names a role; a folder of the home directory names a kind of content, and the PARA notes that point at an item give it its role.
 
@@ -38,11 +39,26 @@ setup.para = {
   enable = true;
   vault = "Knowledge";  # relative to the home directory, the default
   lint.enable = true;   # the default
+  check = {
+    enable = true;
+    vendored = [ "20_Projects/prior-art/" ];  # copies, text of any kind
+  };
 };
 ```
 
 - An activation step creates the missing folders, and the vault's `AGENTS.md` once: its prose from `module/agents-vault.md`, with tables of the folders and the idea statuses from the spec. It never overwrites anything, so the seeded `AGENTS.md` is edited by hand from then on. No `INDEX.md` is seeded: a folder gets one when it has something to add.
 - `lint.enable`: each folder's `.markdownlint-cli2.jsonc` is a store link to the profile its spec names, from `setup-base`, so a new profile arrives with a switch. A file already at that path is not replaced: home-manager stops, or moves it aside when `home-manager.backupFileExtension` is set.
+- `check.enable`: `para-check` and a weekly user timer (Monday 10:30) that sends one notification when the vault differs from the spec, with the report in `~/.local/state/para-check/report.md`.
+
+## para-check
+
+```sh
+para-check                                  # the live vault, ~/Knowledge by default
+para-check --vault DIR --report FILE        # another vault; a Markdown report
+para-check --repo --vendored PREFIX ...     # the files git sees, from the vault's root
+```
+
+It reports, never fixes, and exits 1 when it finds something. Findings: a folder of the spec that is missing, a visible folder the spec does not list (`unknown`), a file in a PARA folder that is not a content format, a binary where only text belongs, a raster illustration over the limit, a page (`.html`) without a Content-Security-Policy that forbids every request and allows no web address, an idea note without a `**Status:**` from `ideaStatus` (the notes named in capitals, such as `INDEX.md`, are not ideas), and a folder's lint config that is not the link to its profile. `--repo` is the vault's own `repo-check` and CI: it checks the files git sees, a file still encrypted by git-crypt by its name only, and leaves out what only the live tree shows (missing folders, the untracked lint links). The flake exports it as `packages.para-check`, with this spec built in.
 
 See [AGENTS.md](AGENTS.md) for how to work in this repository.
 
