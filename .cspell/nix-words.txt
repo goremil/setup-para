@@ -18,6 +18,7 @@ devshell
 devshells
 devenv
 direnv
+envrc
 nix-direnv
 nixos-rebuild
 nixos-option
@@ -123,6 +124,7 @@ nameValuePair
 recursiveUpdate
 escapeShellArg
 getExe
+elem
 getBin
 getLib
 mainProgram

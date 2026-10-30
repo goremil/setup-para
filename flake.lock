@@ -5,11 +5,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1793241538,
-        "narHash": "sha256-oF1Mjt8Fmc743H9EbJQo250SPIxVUzLlLa+L/n/XTvU=",
+        "lastModified": 1793319841,
+        "narHash": "sha256-IrBtPPC/YC1+EVWcBXl4GdgRTgxUT/2ByBAsRSWInz4=",
         "ref": "refs/heads/main",
-        "rev": "f7d2d5177d4eb25285eca3f9913010baf3dea372",
-        "revCount": 23,
+        "rev": "70a239c26b16446cda33aeef2b11c8a14a443b7a",
+        "revCount": 32,
         "type": "git",
         "url": "https://github.com/goremil/setup-base"
       },
