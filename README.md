@@ -2,7 +2,7 @@
 
 The PARA skeleton of the knowledge vault and the taxonomy of kinds shared with the home directory, with the home-manager module that seeds it.
 
-Status: v0.2: the spec, its checks, the home-manager module and `para-check`.
+Status: v0.3: the spec, its checks, the home-manager module with the rules for work and boards, and `para-check`.
 
 ## The spec
 
@@ -46,7 +46,7 @@ setup.para = {
 };
 ```
 
-- An activation step creates the missing folders, and the vault's `AGENTS.md` once: its prose from `module/agents-vault.md`, with tables of the folders and the idea statuses from the spec. It never overwrites anything, so the seeded `AGENTS.md` is edited by hand from then on. No `INDEX.md` is seeded: a folder gets one when it has something to add.
+- An activation step creates the missing folders, and the vault's `AGENTS.md` once: its prose from `module/agents-vault.md`, with tables of the folders and the idea statuses from the spec, and the rules for work: boards in the Obsidian Kanban format, named `*.kanban.md`, closed cards archived and the knowledge they produced distilled. It never overwrites anything, so the seeded `AGENTS.md` is edited by hand from then on. No `INDEX.md` is seeded: a folder gets one when it has something to add.
 - `lint.enable`: each folder's `.markdownlint-cli2.jsonc` is a store link to the profile its spec names, from `setup-base`, so a new profile arrives with a switch. A file already at that path is not replaced: home-manager stops, or moves it aside when `home-manager.backupFileExtension` is set.
 - `check.enable`: `para-check` and a weekly user timer (Monday 10:30) that sends one notification when the vault differs from the spec, with the report in `~/.local/state/para-check/report.md`.
 

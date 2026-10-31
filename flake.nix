@@ -259,7 +259,8 @@
           module = pkgs.runCommand "module" { nativeBuildInputs = [ pkgs.jq ]; } ''
             grep -qF 'mkdir -p "/home/test/Knowledge/10_Ideas"' ${home}/activate
             agents=$(grep -o '/nix/store/[^ ]*-AGENTS.md' ${home}/activate | head -1)
-            grep -qF '| `90_Archive` | Superseded' "$agents"
+            grep -qF '| `90_Archive` | Inactive material' "$agents"
+            grep -qF '## Work and boards' "$agents"
             grep -qF 'Not linted. |' "$agents"
             grep -qF '| `seed` | A hunch' "$agents"
             test "$(grep -o '^| `[a-z]*` | [A-Z]' "$agents" | cut -d'`' -f2 | tr '\n' ' ')" = "seed exploring shaped promoted dropped "

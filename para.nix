@@ -22,7 +22,7 @@
     projects = "Short-term efforts with a defined goal and end state.";
     areas = "Standing responsibilities kept coherent with no end date; never done, only the current best answer until superseded.";
     resources = "Topics, interests and reference material that may be useful later; no action implied.";
-    archive = "Superseded or otherwise inactive material from the other roles, kept for history, not for building on directly.";
+    archive = "Inactive material worth returning to or citing: closed projects with their lessons, closed cards, retired conventions and decisions with their reasons, and snapshots of content the vault does not track.";
     scratchpad = "Experiments and temporary notes, Markdown only; outside the flow.";
   };
 
